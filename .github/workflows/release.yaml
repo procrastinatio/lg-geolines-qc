@@ -40,7 +40,7 @@ jobs:
         uses: ncipollo/release-action@v1.14.0
         with:
           allowUpdates: true
-          artifacts: "GeoLinesQC*"
+          artifacts: "GeoLinesQC.*.zip"
           generateReleaseNotes: true
           omitNameDuringUpdate: true
           token: ${{ secrets.PAT_TAGGING }}
