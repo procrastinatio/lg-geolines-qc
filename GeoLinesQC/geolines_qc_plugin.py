@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import sys
 import os
 from qgis.core import Qgis
@@ -43,7 +45,10 @@ from qgis.core import QgsProject, QgsFeature, QgsGeometry, QgsDistanceArea
 from qgis.gui import QgsMessageBar
 from qgis.utils import iface
 
-DEFAULT_THRESHOLD = 100.0
+from GeoLinesQC.utils import get_layer_toc_name
+
+DEFAULT_BUFFER = 500.0
+DEFAULT_SEGMENT_LENGTH = 100.0
 
 
 class GeolinesQCPlugin:
@@ -88,14 +93,14 @@ class GeolinesQCPlugin:
         self.layer2_combo = QComboBox()
         self.threshold_input = QLineEdit()
         self.threshold_input.setPlaceholderText(
-            "Optional: Enter threshold distance [m]"
+            f"Optional: buffer distance [m] (default: {DEFAULT_BUFFER})"
         )
 
         layout.addWidget(QLabel("Layer to Check:"))
         layout.addWidget(self.layer1_combo)
         layout.addWidget(QLabel("Reference Layer:"))
         layout.addWidget(self.layer2_combo)
-        layout.addWidget(QLabel("Threshold Distance:"))
+        layout.addWidget(QLabel("Buffer Distance:"))
         layout.addWidget(self.threshold_input)
 
         layers = QgsProject.instance().layerTreeRoot().children()
@@ -118,11 +123,13 @@ class GeolinesQCPlugin:
         # TODO check validiy
         layer1_name = self.layer1_combo.currentText()
         layer2_name = self.layer2_combo.currentText()
-        segment_length = (
+        buffer_distance = (
             float(self.threshold_input.text())
             if self.threshold_input.text()
             else DEFAULT_THRESHOLD
         )
+
+        segment_length = segment_length
 
         self.iface.messageBar().pushMessage(
             "Info",
@@ -136,7 +143,7 @@ class GeolinesQCPlugin:
         # Create a new memory layer to store the segmented lines with intersection results
         output_layer = QgsVectorLayer(
             "LineString?crs=" + input_layer.crs().authid(),
-            "segmented_lines_with_intersections",
+            f"{layer1_name} — {layer2_name} {buffer_distance}",
             "memory",
         )
         output_layer.dataProvider().addAttributes(
@@ -165,10 +172,11 @@ class GeolinesQCPlugin:
 
         # Segment each feature in the input layer
         # segment_length = 100.0  # Desired segment length
-        buffer_distance = 500.0  # Buffer distance for intersection check
+        # buffer_distance = 500.0  # Buffer distance for intersection check
         for i, feature in enumerate(input_layer.getFeatures()):
             # Update progress bar
-            progress.setValue(i)
+            if i % 10 == 0:
+                progress.setValue(i)
             if progress.wasCanceled():
                 self.iface.messageBar().pushMessage(
                     "Warning",
@@ -177,7 +185,7 @@ class GeolinesQCPlugin:
                 )
                 break
             line_geometry = feature.geometry()
-            segments = self.segment_line(line_geometry, segment_length)
+            segments = self.segment_line(line_geometry, DEFAULT_SEGMENT_LENGTH)
 
             # Add each segment to the output layer with intersection results
             for segment in segments:
