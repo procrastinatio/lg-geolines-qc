@@ -36,9 +36,9 @@ jobs:
 
     - name: Build package
       run: |
-        qgis-plugin-ci --no-validation package ${{ env.RELEASE_VERSION }}
+        qgis-plugin-ci --no-validation package ${{ env.VERSION }}
         mkdir tmp
-        unzip GeoLinesQC.${{ env.RELEASE_VERSION }}.zip -d tmp
+        unzip GeoLinesQC.${{ env.TAG }}.zip -d tmp
 
 #    - name: Save PR number to zips
 #      run: |
@@ -49,5 +49,5 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: GeoLinesQC.${{ env.RELEASE_VERSION }}
+        name: GeoLinesQC.${{ env.TAG }}
         path: tmp
