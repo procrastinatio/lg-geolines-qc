@@ -36,6 +36,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: GeoLinesQC.zip
+          path: tmp
       - name: Display structure of downloaded files
         run: ls -R
 
@@ -45,13 +46,13 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.PAT_TAGGING }}
         with:
             files: |
-              GeoLinesQC.zip
+              tmp/GeoLinesQC.zip
 
       - name: Create/update release on GitHub
         uses: ncipollo/release-action@v1.15.0
         with:
           allowUpdates: true
-          artifacts: "GeoLinesQC.zip"
+          artifacts: "tmp/GeoLinesQC.zip"
           generateReleaseNotes: true
           omitNameDuringUpdate: true
           token: ${{ secrets.PAT_TAGGING }}
