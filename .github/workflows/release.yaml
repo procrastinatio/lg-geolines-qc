@@ -33,7 +33,7 @@ jobs:
         uses: ncipollo/release-action@v1.14.0
         with:
           allowUpdates: true
-          artifacts: "tmp**/*"
+          artifacts: "tmp/GeoLinesQC*"
           generateReleaseNotes: true
           omitNameDuringUpdate: true
           token: ${{ secrets.PAT_TAGGING }}
