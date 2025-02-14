@@ -49,5 +49,5 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: GeoLinesQC.zip
+        name: GeoLinesQC.*
         path: tmp
