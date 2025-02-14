@@ -15,7 +15,6 @@ jobs:
   build-python-wheel:
     name: "🐍 Python Wheel"
     uses: ./.github/workflows/build.yaml
-    secrets: inherit
 
   release-gh:
     name: "Release on tag"
