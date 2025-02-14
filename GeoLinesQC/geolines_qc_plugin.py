@@ -41,6 +41,7 @@ from qgis.core import QgsProject, QgsFeature, QgsGeometry, QgsDistanceArea
 from qgis.gui import QgsMessageBar
 from qgis.utils import iface
 
+DEFAULT_THRESHOLD = 100.0
 
 class GeolinesQCPlugin:
     def __init__(self, iface):
@@ -70,6 +71,11 @@ class GeolinesQCPlugin:
 
     def run(self):
         # Create and show the dialog
+        self.iface.messageBar().pushMessage(
+            "Info",
+            "Open dialog...",
+            level=Qgis.Info,
+        )
         self.dialog = QDialog()
         self.dialog.setWindowTitle("GeoLines QC")
         layout = QVBoxLayout()
@@ -109,8 +115,14 @@ class GeolinesQCPlugin:
         # TODO check validiy
         layer1_name = self.layer1_combo.currentText()
         layer2_name = self.layer2_combo.currentText()
-        threshold = (
-            float(self.threshold_input.text()) if self.threshold_input.text() else None
+        segment_length = (
+            float(self.threshold_input.text()) if self.threshold_input.text() else DEFAULT_THRESHOLD
+        )
+
+        self.iface.messageBar().pushMessage(
+            "Info",
+            "Starting analysis...",
+            level=Qgis.Info,
         )
 
         input_layer = QgsProject.instance().mapLayersByName(layer1_name)[0]
@@ -132,8 +144,14 @@ class GeolinesQCPlugin:
         )
         output_layer.updateFields()
 
+        self.iface.messageBar().pushMessage(
+            "Info",
+            f"Input layer has {len(input_layer.getFeatures())} features...",
+            level=Qgis.Info,
+        )
+
         # Segment each feature in the input layer
-        segment_length = 100.0  # Desired segment length
+        # segment_length = 100.0  # Desired segment length
         buffer_distance = 500.0  # Buffer distance for intersection check
         for feature in input_layer.getFeatures():
             line_geometry = feature.geometry()
