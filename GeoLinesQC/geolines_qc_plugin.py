@@ -3,6 +3,7 @@ import os
 from qgis.core import Qgis
 
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (
     QAction,
@@ -23,6 +24,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QVariant
 from qgis.core import QgsSpatialIndex
+from qgis.PyQt.QtWidgets import QProgressDialog
 
 
 from qgis.core import (
@@ -42,6 +44,7 @@ from qgis.gui import QgsMessageBar
 from qgis.utils import iface
 
 DEFAULT_THRESHOLD = 100.0
+
 
 class GeolinesQCPlugin:
     def __init__(self, iface):
@@ -116,7 +119,9 @@ class GeolinesQCPlugin:
         layer1_name = self.layer1_combo.currentText()
         layer2_name = self.layer2_combo.currentText()
         segment_length = (
-            float(self.threshold_input.text()) if self.threshold_input.text() else DEFAULT_THRESHOLD
+            float(self.threshold_input.text())
+            if self.threshold_input.text()
+            else DEFAULT_THRESHOLD
         )
 
         self.iface.messageBar().pushMessage(
@@ -144,16 +149,33 @@ class GeolinesQCPlugin:
         )
         output_layer.updateFields()
 
-        self.iface.messageBar().pushMessage(
-            "Info",
-            f"Input layer has {len(input_layer.getFeatures())} features...",
-            level=Qgis.Info,
+        # Initialize progress dialog
+        progress = QProgressDialog(
+            "Processing features...",
+            "Cancel",
+            0,
+            input_layer.featureCount(),
+            self.iface.mainWindow(),
         )
+        progress.setWindowTitle("Analyzing Layers")
+        progress.setWindowModality(
+            Qt.WindowModal
+        )  # Make the dialog block the main window
+        progress.setMinimumDuration(0)  # Show the dialog immediately
 
         # Segment each feature in the input layer
         # segment_length = 100.0  # Desired segment length
         buffer_distance = 500.0  # Buffer distance for intersection check
-        for feature in input_layer.getFeatures():
+        for i, feature in enumerate(input_layer.getFeatures()):
+            # Update progress bar
+            progress.setValue(i)
+            if progress.wasCanceled():
+                self.iface.messageBar().pushMessage(
+                    "Warning",
+                    "Operation canceled by user.",
+                    level=Qgis.Warning,
+                )
+                break
             line_geometry = feature.geometry()
             segments = self.segment_line(line_geometry, segment_length)
 
@@ -179,6 +201,13 @@ class GeolinesQCPlugin:
             "Info",
             "Segmentation and intersection check complete. Output layer added to the map.",
             level=Qgis.Info,
+        )
+        # Close the progress dialog
+        progress.setValue(input_layer.featureCount())
+        self.iface.messageBar().pushMessage(
+            "Success",
+            "Segmentation and intersection check complete. Output layer added to the map.",
+            level=Qgis.Success,
         )
 
     def segment_line(self, line, segment_length):
