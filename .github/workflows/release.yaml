@@ -38,7 +38,13 @@ jobs:
           name: GeoLinesQC.zip
           path: .
 
-
+      - name: Release assets
+        uses: softprops/action-gh-release@v2
+        env:
+            GITHUB_TOKEN: ${{ secrets.PAT_TAGGING }}
+        with:
+            files: |
+              GeoLinesQC.zip
 
       - name: Create/update release on GitHub
         uses: ncipollo/release-action@v1.14.0
