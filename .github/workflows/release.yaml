@@ -36,6 +36,6 @@ jobs:
           artifacts: "builds**/*"
           generateReleaseNotes: true
           omitNameDuringUpdate: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TAGGING }}
 
 
