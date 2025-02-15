@@ -12,10 +12,13 @@ the Free Software Foundation; either version 2 of the License, or
 """
 
 import os
+
+
 def resolve(name, basepath=None):
     if not basepath:
-      basepath = os.path.dirname(os.path.realpath(__file__))
+        basepath = os.path.dirname(os.path.realpath(__file__))
     return os.path.join(basepath, name)
+
 
 def classFactory(iface):
     """Load plugin.
