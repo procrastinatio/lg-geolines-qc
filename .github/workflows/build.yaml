@@ -51,13 +51,13 @@ jobs:
           name: GeoLinesQC
           path: GeoLinesQC.zip
       - name: Rename Artifact with Version
-        run: mv GeoLinesQC.zip GeoLines-${{ env.VERSION }}.zip
+        run: mv GeoLinesQC.zip GeoLinesQC-${{ env.VERSION }}.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GeoLines-${{ env.VERSION }}.zip  # New name!
-          path: GeoLines-${{ env.VERSION }}.zip
+          name: GeoLinesQC-${{ env.VERSION }}.zip  # New name!
+          path: GeoLinesQC-${{ env.VERSION }}.zip
       # - name: Extract version from tag
       #  if: 'startsWith(github.ref, ''refs/tags/'') && github.ref_name == ''master'''
       #  run: 'echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV'
