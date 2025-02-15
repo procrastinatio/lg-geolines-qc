@@ -12,6 +12,9 @@ def update_plugin_version(metadata_path, new_version):
         new_version (str): The new version number (e.g., "1.2.3").
     """
     try:
+        # Remove the 'v' prefix if it exists
+        if new_version.startswith("v"):
+            new_version = new_version[1:]
         # Read the metadata file
         with open(metadata_path, "r") as file:
             lines = file.readlines()
