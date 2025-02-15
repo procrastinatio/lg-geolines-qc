@@ -36,6 +36,7 @@ class GeolinesQCPlugin:
         self.plugin_dir = os.path.dirname(__file__)
         self.actions = []
         self.menu = self.tr("&GeoLines QC")
+        self.predefined_geometries = {}
 
     def tr(self, message):
         return QCoreApplication.translate("GeoLinesQC", message)
@@ -56,6 +57,70 @@ class GeolinesQCPlugin:
         self.iface.removePluginMenu("&GeoLines QC", self.action)
         self.iface.removeToolBarIcon(self.action)
 
+    def get_predefined_geometries(self):
+        # Load the GPGK file
+        gpkg_path = "data/regions.gpkg"
+        layername = "regions"
+        plugin_root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+        full_path = os.path.join(plugin_root_dir, gpkg_path)
+
+
+
+        if bool(self.predefined_geometries):
+            return self.predefined_geometries
+
+        try:
+
+            # Check if the file exists
+            if not os.path.exists(full_path):
+                raise FileNotFoundError(f"The file '{full_path}' does not exist.")
+
+            regions_layer = QgsVectorLayer(
+                full_path + "|layername=" + layername, "regions", "ogr"
+            )
+
+            # Check if the layer is valid
+            if not regions_layer.isValid():
+                raise ValueError(
+                    f"Failed to load layer from '{gpkg_path}'. The file may be corrupt or unsupported."
+                )
+
+            # Check if the layer contains geometries
+            if regions_layer.featureCount() == 0:
+                raise ValueError(f"The layer '{layername}' contains no features.")
+
+        except FileNotFoundError as e:
+            self.iface.messageBar().pushMessage(
+                "File Not Found", str(e), level=Qgis.Critical
+            )
+
+        except ValueError as e:
+            self.iface.messageBar().pushMessage(
+                "Layer Error", str(e), level=Qgis.Critical
+            )
+        except Exception as e:
+            self.iface.messageBar().pushMessage(
+                "Unexpected Error",
+                f"An unexpected error occurred: {str(e)}",
+                level=Qgis.Critical,
+            )
+
+        # Store geometries in a dictionary
+
+        for feature in regions_layer.getFeatures():
+            name = feature["name"]
+            geometry = feature.geometry()
+            self.predefined_geometries[name] = geometry
+
+        return self.predefined_geometries
+
+    def get_selected_geometry(self):
+        selected_name = self.geometry_combo.currentText()
+        if selected_name != "None":
+            return self.get_predefined_geometries()[selected_name]
+        return None
+
     def run(self):
         # Create and show the dialog
         self.iface.messageBar().pushMessage(
@@ -74,6 +139,7 @@ class GeolinesQCPlugin:
         self.threshold_input.setPlaceholderText(
             f"Optional: buffer distance [m] (default: {DEFAULT_BUFFER})"
         )
+        self.geometry_combo = QComboBox()
 
         layout.addWidget(QLabel("Layer to Check:"))
         layout.addWidget(self.layer1_combo)
@@ -81,6 +147,13 @@ class GeolinesQCPlugin:
         layout.addWidget(self.layer2_combo)
         layout.addWidget(QLabel("Buffer Distance:"))
         layout.addWidget(self.threshold_input)
+
+        # Add a dropdown for predefined geometries
+        self.geometry_combo.addItem("None")
+        for name in self.get_predefined_geometries():
+            self.geometry_combo.addItem(name)
+        layout.addWidget(QLabel("Select Region:"))
+        layout.addWidget(self.geometry_combo)
 
         layers = QgsProject.instance().layerTreeRoot().children()
         self.layer1_combo.clear()
@@ -107,8 +180,6 @@ class GeolinesQCPlugin:
             if self.threshold_input.text()
             else DEFAULT_BUFFER
         )
-
-
 
         self.iface.messageBar().pushMessage(
             "Info",
@@ -278,7 +349,7 @@ class GeolinesQCPlugin:
         self.iface.messageBar().pushMessage(
             "Info", "Starting analysis...", level=Qgis.Info
         )
-        
+
         try:
             # Create a buffer around the segment
             segment_buffer = segment.buffer(
@@ -304,5 +375,3 @@ class GeolinesQCPlugin:
             print(f"Error: {e}")
             self.iface.messageBar().pushMessage("Error", str(e), level=Qgis.Critical)
             return False
-
-

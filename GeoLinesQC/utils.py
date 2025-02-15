@@ -23,4 +23,3 @@ def get_layer_toc_name(layer):
     else:
         # If the layer is not in the TOC, return the layer's name
         return layer.name()
-
