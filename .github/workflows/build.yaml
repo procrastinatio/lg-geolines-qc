@@ -42,19 +42,19 @@ jobs:
         id: version
         run: |
             echo "VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-            echo "Extracted version: $VERSION"
+            echo "Extracted version: ${{ env.VERSION }}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Update metadata.txt
         run: |
-          python update_version.py "GeoLinesQC/metadata.txt" "${{ steps.version.outputs.version }}"
+          python update_version.py "GeoLinesQC/metadata.txt" "${{ env.VERSION }}"
 
       - name: Commit updated metadata.txt
         run: |
               git config --global user.name "GitHub Actions"
               git config --global user.email "actions@github.com"
               # git add GeoLinesQC/metadata.txt
-              # git commit -m "Update version to ${{ steps.version.outputs.version }}"
+              # git commit -m "Update version to ${{ env.VERSION }}"
               # git push
 
 
