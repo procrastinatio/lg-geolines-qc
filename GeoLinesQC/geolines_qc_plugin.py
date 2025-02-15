@@ -3,6 +3,7 @@
 
 import os
 
+from qgis import processing
 from qgis.core import (
     Qgis,
     QgsFeature,
@@ -25,7 +26,9 @@ from qgis.PyQt.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
 from GeoLinesQC import resolve
+from GeoLinesQC.utils import geometry_to_vector_layer
 
 DEFAULT_BUFFER = 500.0
 DEFAULT_SEGMENT_LENGTH = 100.0
@@ -63,14 +66,10 @@ class GeolinesQCPlugin:
         gpkg_path = resolve("data/regions.gpkg")
         layername = "regions"
 
-
-
-
         if bool(self.predefined_geometries):
             return self.predefined_geometries
 
         try:
-
             # Check if the file exists
             if not os.path.exists(gpkg_path):
                 raise FileNotFoundError(f"The file '{gpkg_path}' does not exist.")
@@ -169,6 +168,43 @@ class GeolinesQCPlugin:
         self.dialog.setLayout(layout)
         self.dialog.exec_()
 
+    def clip_layer_with_processing(self, layer, region_layer, layer_name):
+        """
+        Clips a layer using the QGIS processing tool.
+
+        Args:
+            layer (QgsVectorLayer): The layer to clip.
+            region_layer (QgsVectorLayer): The region layer to clip with.
+            layer_name (str): Name of the clipped layer.
+
+        Returns:
+            QgsVectorLayer: The clipped layer, or None if an error occurs.
+        """
+        try:
+            # Run the clip algorithm
+            result = processing.run(
+                "qgis:clip",
+                {
+                    "INPUT": layer,
+                    "OVERLAY": region_layer,
+                    "OUTPUT": "memory:",
+                },
+            )
+
+            # Get the clipped layer
+            clipped_layer = result["OUTPUT"]
+            clipped_layer.setName(layer_name)
+
+            return clipped_layer
+
+        except Exception as e:
+            self.iface.messageBar().pushMessage(
+                "Error",
+                f"Failed to clip layer: {str(e)}",
+                level=Qgis.Critical,
+            )
+            return None
+
     def analyze_layers(self):
         # Get selected layers
         # TODO check validiy
@@ -186,8 +222,38 @@ class GeolinesQCPlugin:
             level=Qgis.Info,
         )
 
-        input_layer = QgsProject.instance().mapLayersByName(layer1_name)[0]
-        reference_layer = QgsProject.instance().mapLayersByName(layer2_name)[0]
+        input_layer_full = QgsProject.instance().mapLayersByName(layer1_name)[0]
+        reference_layer_full = QgsProject.instance().mapLayersByName(layer2_name)[0]
+
+        # Get the selected region layer
+        region_geometry = (
+            self.get_selected_geometry()
+        )  # Assuming this returns a QgsVectorLayer
+
+        if not region_geometry:
+            self.iface.messageBar().pushMessage(
+                "Info",
+                "No region selected. Using the full dataset",
+                level=Qgis.Info,
+            )
+            input_layer = input_layer_full
+            reference_layer = reference_layer_full
+        else:
+            # Convert the region geometry to a vector layer
+            region_layer = geometry_to_vector_layer(region_geometry, "Selected Region")
+            # Clip layer1 to the selected region
+            input_layer = self.clip_layer_with_processing(
+                input_layer_full, region_layer, "Clipped Layer 1"
+            )
+            if input_layer:
+                QgsProject.instance().addMapLayer(input_layer)
+
+            # Clip layer2 to the selected region
+            reference_layer = self.clip_layer_with_processing(
+                reference_layer_full, region_layer, "Clipped Layer 2"
+            )
+            if reference_layer:
+                QgsProject.instance().addMapLayer(reference_layer)
 
         # Create a new memory layer to store the segmented lines with intersection results
         output_layer = QgsVectorLayer(
