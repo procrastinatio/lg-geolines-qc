@@ -218,7 +218,7 @@ class GeolinesQCPlugin:
 
         self.iface.messageBar().pushMessage(
             "Info",
-            "Starting analysis...",
+            "Loading data...",
             level=Qgis.Info,
         )
 
@@ -229,6 +229,12 @@ class GeolinesQCPlugin:
         region_geometry = (
             self.get_selected_geometry()
         )  # Assuming this returns a QgsVectorLayer
+
+        self.iface.messageBar().pushMessage(
+            "Info",
+            "Clipping data...",
+            level=Qgis.Info,
+        )
 
         if not region_geometry:
             self.iface.messageBar().pushMessage(
@@ -270,6 +276,11 @@ class GeolinesQCPlugin:
             ]
         )
         output_layer.updateFields()
+        self.iface.messageBar().pushMessage(
+            "Info",
+            "Starting analysis...",
+            level=Qgis.Info,
+        )
 
         # Initialize progress dialog
         progress = QProgressDialog(
@@ -317,9 +328,7 @@ class GeolinesQCPlugin:
 
         # Add the output layer to the map
         QgsProject.instance().addMapLayer(output_layer)
-        print(
-            "Segmentation and intersection check complete. Output layer added to the map."
-        )
+
         self.iface.messageBar().pushMessage(
             "Info",
             "Segmentation and intersection check complete. Output layer added to the map.",
