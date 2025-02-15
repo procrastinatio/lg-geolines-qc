@@ -25,6 +25,7 @@ from qgis.PyQt.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+from GeoLinesQC import resolve
 
 DEFAULT_BUFFER = 500.0
 DEFAULT_SEGMENT_LENGTH = 100.0
@@ -59,11 +60,9 @@ class GeolinesQCPlugin:
 
     def get_predefined_geometries(self):
         # Load the GPGK file
-        gpkg_path = "data/regions.gpkg"
+        gpkg_path = resolve("data/regions.gpkg")
         layername = "regions"
-        plugin_root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        full_path = os.path.join(plugin_root_dir, gpkg_path)
 
 
 
@@ -73,11 +72,11 @@ class GeolinesQCPlugin:
         try:
 
             # Check if the file exists
-            if not os.path.exists(full_path):
-                raise FileNotFoundError(f"The file '{full_path}' does not exist.")
+            if not os.path.exists(gpkg_path):
+                raise FileNotFoundError(f"The file '{gpkg_path}' does not exist.")
 
             regions_layer = QgsVectorLayer(
-                full_path + "|layername=" + layername, "regions", "ogr"
+                gpkg_path + "|layername=" + layername, "regions", "ogr"
             )
 
             # Check if the layer is valid
