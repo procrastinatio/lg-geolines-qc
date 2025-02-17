@@ -2,11 +2,7 @@
 
 
 import os
-from qgis.core import QgsMessageLog, Qgis
-from qgis.core import QgsMessageLog, Qgis, QgsWkbTypes
-
 from datetime import datetime
-import os
 
 from qgis import processing
 from qgis.core import (
@@ -14,11 +10,12 @@ from qgis.core import (
     QgsFeature,
     QgsField,
     QgsGeometry,
+    QgsMessageLog,
     QgsPoint,
     QgsProject,
     QgsSpatialIndex,
     QgsVectorLayer,
-    QgsMessageLog,
+    QgsWkbTypes,
 )
 from qgis.PyQt.QtCore import QCoreApplication, Qt, QVariant
 from qgis.PyQt.QtGui import QIcon
@@ -37,7 +34,7 @@ from qgis.PyQt.QtWidgets import (
 # from GeoLinesQC.utils import geometry_to_vector_layer,
 
 DEFAULT_BUFFER = 500.0
-DEFAULT_SEGMENT_LENGTH = 100.0
+DEFAULT_SEGMENT_LENGTH = 200.0
 
 ADD_CLIPPED_LAYER_TO_MAP = False
 DIALOG_WIDTH = 400
@@ -147,6 +144,10 @@ class GeolinesQCPlugin:
         self.threshold_input.setPlaceholderText(
             f"Optional: buffer distance [m] (default: {DEFAULT_BUFFER})"
         )
+        self.segment_length_input = QLineEdit()
+        self.segment_length_input.setPlaceholderText(
+            f"Optional: segment length [m] (default: {DEFAULT_SEGMENT_LENGTH})"
+        )
         self.geometry_combo = QComboBox()
 
         layout.addWidget(QLabel("Layer to Check:"))
@@ -155,7 +156,9 @@ class GeolinesQCPlugin:
         layout.addWidget(self.layer2_combo)
         layout.addWidget(QLabel("Buffer Distance:"))
         layout.addWidget(self.threshold_input)
-        layout.addWidget(QLabel("Select Region:"))
+        layout.addWidget(QLabel("Segment Length:"))
+        layout.addWidget(self.segment_length_input)
+        layout.addWidget(QLabel("Region layer:"))
         layout.addWidget(self.geometry_combo)
 
         layers = QgsProject.instance().layerTreeRoot().children()
@@ -218,7 +221,7 @@ class GeolinesQCPlugin:
     def analyze_layers(self):
         # Get selected layers
         # TODO check validiy
-        mask_layer_name_full = None
+
         layer1_name = self.layer1_combo.currentText()
         layer2_name = self.layer2_combo.currentText()
         mask_layer_name = self.geometry_combo.currentText()
@@ -226,6 +229,12 @@ class GeolinesQCPlugin:
             float(self.threshold_input.text())
             if self.threshold_input.text()
             else DEFAULT_BUFFER
+        )
+
+        segment_length = (
+            float(self.segment_length_input.text())
+            if self.segment_length_input.text()
+            else DEFAULT_SEGMENT_LENGTH
         )
 
         self.iface.messageBar().pushMessage(
@@ -312,6 +321,12 @@ class GeolinesQCPlugin:
         # segment_length = 100.0  # Desired segment length
         # buffer_distance = 500.0  # Buffer distance for intersection check
 
+        QgsMessageLog.logMessage(
+            f"Buffer distance: {buffer_distance}, segment length={segment_length}",
+            "GeoLinesQC",
+            level=Qgis.Info,
+        )
+
         for i, feature in enumerate(input_layer.getFeatures()):
             # Update progress bar
             if i % 10 == 0:
@@ -324,13 +339,7 @@ class GeolinesQCPlugin:
                 )
                 break
             line_geometry = feature.geometry()
-            segments = self.segment_line(line_geometry, DEFAULT_SEGMENT_LENGTH)
-
-            QgsMessageLog.logMessage(
-                f"nb: {len(segments)}, length={line_geometry.length()}",
-                "GeoLinesQC",
-                level=Qgis.Info,
-            )
+            segments = self.segment_line(line_geometry, segment_length)
 
             # Add each segment to the output layer with intersection results
             for segment in segments:
