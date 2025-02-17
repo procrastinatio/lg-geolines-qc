@@ -64,7 +64,7 @@ class GeolinesQCPlugin:
         self.iface.removePluginMenu("&GeoLines QC", self.action)
         self.iface.removeToolBarIcon(self.action)
 
-    def get_predefined_geometries(self):
+    """def get_predefined_geometries(self):
         # Load the GPGK file
         gpkg_path = resolve("data/regions.gpkg")
         layername = "regions"
@@ -114,13 +114,13 @@ class GeolinesQCPlugin:
             geometry = feature.geometry()
             self.predefined_geometries[name] = geometry
 
-        return self.predefined_geometries
+        return self.predefined_geometries"""
 
-    def get_selected_geometry(self):
+    """def get_selected_geometry(self):
         selected_name = self.geometry_combo.currentText()
         if selected_name != "None":
             return self.get_predefined_geometries()[selected_name]
-        return None
+        return None"""
 
     def run(self):
         # Create and show the dialog
@@ -236,15 +236,9 @@ class GeolinesQCPlugin:
             )[0]
 
         # Get the selected region layer
-        region_geometry = (
+        """region_geometry = (
             self.get_selected_geometry()
-        )  # Assuming this returns a QgsVectorLayer
-
-        self.iface.messageBar().pushMessage(
-            "Info",
-            "Clipping data...",
-            level=Qgis.Info,
-        )
+        )  # Assuming this returns a QgsVectorLayer"""
 
         if not mask_layer_name:
             self.iface.messageBar().pushMessage(
@@ -255,6 +249,11 @@ class GeolinesQCPlugin:
             input_layer = input_layer_full
             reference_layer = reference_layer_full
         else:
+            self.iface.messageBar().pushMessage(
+                "Info",
+                "Clipping data...",
+                level=Qgis.Info,
+            )
             # Convert the region geometry to a vector layer
             # region_layer = geometry_to_vector_layer(region_geometry, "Selected Region")
             region_layer = mask_layer_name_full
