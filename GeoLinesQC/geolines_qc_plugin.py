@@ -27,7 +27,7 @@ from qgis.PyQt.QtWidgets import (
     QVBoxLayout,
 )
 
-from GeoLinesQC import resolve
+# from GeoLinesQC import resolve
 # from GeoLinesQC.utils import geometry_to_vector_layer
 
 DEFAULT_BUFFER = 500.0
