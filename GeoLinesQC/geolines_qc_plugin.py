@@ -30,9 +30,6 @@ from qgis.PyQt.QtWidgets import (
     QVBoxLayout,
 )
 
-# from GeoLinesQC import resolve
-# from GeoLinesQC.utils import geometry_to_vector_layer,
-
 DEFAULT_BUFFER = 500.0
 DEFAULT_SEGMENT_LENGTH = 200.0
 
@@ -539,76 +536,6 @@ class GeolinesQCPlugin:
 
             error_msg = f"Error in segment_single_line: {str(e)}\nTraceback:\n{traceback.format_exc()}"
             self.log_debug(error_msg, show_in_bar=True)
-            return [line]
-
-    def segment_line_ori(self, line, segment_length):
-        """
-        Splits a line into segments of equal length using QGIS native functions.
-
-        Args:
-            line (QgsGeometry): The input line geometry.
-            segment_length (float): The desired length of each segment.
-
-        Returns:
-            list: A list of QgsGeometry objects representing the segments.
-        """
-        try:
-            # Extract vertices from the line
-            vertices = line.asPolyline()  # Returns a list of QgsPointXY
-            if len(vertices) < 2:
-                self.iface.messageBar().pushMessage(
-                    "Error", "Invalid line: Not enough vertices.", level=Qgis.Critical
-                )
-                return [line]
-
-            new_segments = []
-            current_segment = [QgsPoint(vertices[0])]  # Convert QgsPointXY to QgsPoint
-            accumulated_length = 0.0
-
-            for i in range(1, len(vertices)):
-                prev_point = QgsPoint(vertices[i - 1])  # Convert QgsPointXY to QgsPoint
-                current_point = QgsPoint(vertices[i])  # Convert QgsPointXY to QgsPoint
-                segment = QgsGeometry.fromPolyline([prev_point, current_point])
-                segment_length_current = segment.length()
-
-                while accumulated_length + segment_length_current >= segment_length:
-                    # Calculate the remaining length to reach the segment_length
-                    remaining_length = segment_length - accumulated_length
-                    cut_point = segment.interpolate(remaining_length).asPoint()
-
-                    # Add the cut point to the current segment
-                    current_segment.append(
-                        QgsPoint(cut_point)
-                    )  # Convert QgsPointXY to QgsPoint
-                    new_segments.append(QgsGeometry.fromPolyline(current_segment))
-
-                    # Start a new segment from the cut point
-                    current_segment = [
-                        QgsPoint(cut_point)
-                    ]  # Convert QgsPointXY to QgsPoint
-                    accumulated_length = 0.0
-
-                    # Update the segment with the remaining part after the cut
-                    segment = QgsGeometry.fromPolyline(
-                        [QgsPoint(cut_point), current_point]
-                    )
-                    segment_length_current = segment.length()
-
-                # Add the current point to the segment
-                current_segment.append(current_point)
-                accumulated_length += segment_length_current
-
-            # Add the last segment if it has more than one point
-            if len(current_segment) > 1:
-                new_segments.append(QgsGeometry.fromPolyline(current_segment))
-
-            return new_segments
-
-        except Exception as e:
-            print(f"Error: {e}")
-            self.iface.messageBar().pushMessage(
-                "Error: segment_line", str(e), level=Qgis.Critical
-            )
             return [line]
 
     def buffer_and_check_intersections(self, segment, reference_layer, buffer_distance):
