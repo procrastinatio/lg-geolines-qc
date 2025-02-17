@@ -33,6 +33,8 @@ from GeoLinesQC.utils import geometry_to_vector_layer
 DEFAULT_BUFFER = 500.0
 DEFAULT_SEGMENT_LENGTH = 100.0
 
+ADD_CLIPPED_LAYER_TO_MAP = False
+
 
 class GeolinesQCPlugin:
     def __init__(self, iface):
@@ -249,16 +251,16 @@ class GeolinesQCPlugin:
             region_layer = geometry_to_vector_layer(region_geometry, "Selected Region")
             # Clip layer1 to the selected region
             input_layer = self.clip_layer_with_processing(
-                input_layer_full, region_layer, "Clipped Layer 1"
+                input_layer_full, region_layer, f"Clipped {layer1_name}"
             )
-            if input_layer:
+            if ADD_CLIPPED_LAYER_TO_MAP and input_layer:
                 QgsProject.instance().addMapLayer(input_layer)
 
             # Clip layer2 to the selected region
             reference_layer = self.clip_layer_with_processing(
-                reference_layer_full, region_layer, "Clipped Layer 2"
+                reference_layer_full, region_layer, f"Clipped {layer2_name}"
             )
-            if reference_layer:
+            if ADD_CLIPPED_LAYER_TO_MAP and reference_layer:
                 QgsProject.instance().addMapLayer(reference_layer)
 
         # Create a new memory layer to store the segmented lines with intersection results
@@ -341,6 +343,7 @@ class GeolinesQCPlugin:
             "Segmentation and intersection check complete. Output layer added to the map.",
             level=Qgis.Success,
         )
+        self.dialog.close()
 
     def segment_line(self, line, segment_length):
         """
