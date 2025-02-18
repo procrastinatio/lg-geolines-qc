@@ -484,7 +484,7 @@ class GeolinesQCPlugin:
             # self.log_debug(f"Number of vertices in input line: {len(vertices)}")
 
             if len(vertices) < 2:
-                msg = "Invalid line: Not enough vertices."
+                # msg = "Invalid line: Not enough vertices."
                 # self.log_debug(msg, show_in_bar=True)
                 return [line]
 
